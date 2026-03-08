@@ -12,4 +12,7 @@ public interface TriageRecordRepository extends JpaRepository<TriageRecord, Long
 
     @Query("SELECT t FROM TriageRecord t WHERE t.appointment.patient.tc = :tc ORDER BY t.createdAt DESC")
     List<TriageRecord> findAllByPatientTcOrderByCreatedAtDesc(@Param("tc") String tc);
+
+    @Query("SELECT t FROM TriageRecord t WHERE t.appointment.id IN :appointmentIds")
+    List<TriageRecord> findByAppointmentIdIn(@Param("appointmentIds") List<Long> appointmentIds);
 }

@@ -213,6 +213,39 @@ flutter run -d ios --dart-define=API_BASE_URL=http://localhost:8080/api
 - `POST /api/doctor-notes` - Doktor notu oluştur
 - `GET /api/doctor-notes/by-appointment/{id}` - Randevuya göre doktor notları
 
+## 🧠 ML Triaj Sınıflandırma (Veri Madenciliği)
+
+Yapay Sinir Ağları (YSA) kullanarak hasta semptomlarından triaj seviyesi tahmin eden bir veri madenciliği modülü.
+
+### Sınıflandırma
+
+| Sınıf | Urgency Level | Açıklama |
+|---|---|---|
+| 🟢 Yeşil | 1 | Hafif durum |
+| 🟡 Sarı | 2, 3 | Orta aciliyet |
+| 🔴 Kırmızı | 4, 5 | Yüksek aciliyet |
+
+### Yöntem
+- **Veri Seti:** 920 hasta kaydı, ~1099 benzersiz semptom (binary özellik sütunları)
+- **Model:** Keras Sequential ANN (128→64→32 nöron, BatchNorm, Dropout)
+- **Değerlendirme:** 5-Fold Stratified Cross Validation
+- **Sonuçlar:** Ort. Eğitim Accuracy ~%91, Ort. Test Accuracy ~%67
+
+### Çalıştırma
+```bash
+cd ml_triage
+pip install tensorflow pandas scikit-learn matplotlib seaborn numpy
+python triage_ann_model.py
+```
+
+### Çıktılar
+- `triage_dataset.csv` - İşlenmiş veri seti
+- `triage_model.h5` - Eğitilmiş model
+- `accuracy_loss_grafik.png` - Eğitim/test accuracy ve loss grafikleri
+- `confusion_matrix.png` - Karışıklık matrisi
+- `sinif_dagilimi.png` - Sınıf dağılımı
+- `performans_metrikleri.png` - Precision/Recall/F1-Score
+
 ## 🛠 Teknolojiler
 
 ### Backend
@@ -233,6 +266,13 @@ flutter run -d ios --dart-define=API_BASE_URL=http://localhost:8080/api
 - **Dart** - Programlama dili
 - **Dio** - HTTP client
 - **Shared Preferences** - Yerel veri depolama
+
+### ML / Veri Madenciliği
+- **Python 3.11** - Programlama dili
+- **TensorFlow/Keras** - Yapay sinir ağı
+- **Scikit-learn** - Veri ön işleme ve değerlendirme
+- **Pandas/NumPy** - Veri manipülasyonu
+- **Matplotlib/Seaborn** - Görselleştirme
 
 ## 📱 Mobil Uygulama Detayları
 
@@ -290,7 +330,8 @@ hospital_er/
 │   └── er-backend/         # Spring Boot backend
 ├── frontend/               # React frontend
 ├── mobil/                  # Flutter mobil uygulama
-└── dataset/                # Örnek veri dosyaları
+├── dataset/                # Tıbbi veri dosyaları (JSON)
+└── ml_triage/              # YSA triaj sınıflandırma (Veri Madenciliği)
 ```
 
 ## 🧪 Test

@@ -37,3 +37,8 @@ logs/
 
 mobil/build
 mobil/.dart_tool
+
+# ML Triage - generated outputs
+ml_triage/triage_model.h5
+ml_triage/triage_dataset.csv
+ml_triage/__pycache__/

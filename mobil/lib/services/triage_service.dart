@@ -33,15 +33,44 @@ class TriageService {
       }
       return null;
     } on DioException catch (e) {
-      // Wrap with a clearer message for UI
+      // Check if it's a network error (offline) - use local fallback
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.unknown) {
+        debugPrint('Backend erişilemiyor, yerel tahmin kullanılıyor...');
+        return _localFallback(request);
+      }
+
+      // Server responded with error (e.g. 409 conflict)
       final data = e.response?.data;
       final msg = (data is Map && data['message'] != null)
           ? data['message'].toString()
           : e.message ?? 'Triage isteği başarısız';
       throw Exception(msg);
     } catch (e) {
-      throw Exception('Triage isteği başarısız: $e');
+      // Any other error: try local fallback
+      debugPrint('Triage hatası, yerel tahmin deneniyor: $e');
+      return _localFallback(request);
     }
+  }
+
+  /// Local fallback when backend is unreachable
+  Future<TriageResponse?> _localFallback(TriageRequest request) async {
+    final rule = await matchBySymptoms(request.symptoms);
+    if (rule == null) return null;
+
+    return TriageResponse(
+      message: 'Çevrimdışı tahmin: Lütfen internet bağlantınızı kontrol edin.',
+      urgencyLevel: rule.urgencyLevel,
+      urgencyLabel: rule.urgencyLabel,
+      responseText: rule.response,
+      reasoning: rule.reasoning,
+      queueNumber: null,
+      estimatedWaitMinutes: null,
+      waitingAhead: 0,
+      status: 'OFFLINE',
+      patientName: null,
+    );
   }
 
   /// Fetch queue status for a patient tc.

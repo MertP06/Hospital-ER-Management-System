@@ -1,12 +1,22 @@
 package com.acil.er_backend.model;
 
 import jakarta.persistence.*;
+import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
 @Entity
-@Table(name = "appointments")
+@Table(name = "appointments", indexes = {
+        @Index(name = "idx_appointment_date", columnList = "appointmentDate"),
+        @Index(name = "idx_appointment_status", columnList = "status"),
+        @Index(name = "idx_appointment_date_status", columnList = "appointmentDate, status"),
+        @Index(name = "idx_appointment_patient_tc", columnList = "patient_tc")
+})
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Appointment {
 
     @Id
@@ -46,29 +56,4 @@ public class Appointment {
         }
         return null;
     }
-
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public Patient getPatient() { return patient; }
-    public void setPatient(Patient patient) { this.patient = patient; }
-    public Integer getQueueNumber() { return queueNumber; }
-    public void setQueueNumber(Integer queueNumber) { this.queueNumber = queueNumber; }
-    public LocalDate getAppointmentDate() { return appointmentDate; }
-    public void setAppointmentDate(LocalDate appointmentDate) { this.appointmentDate = appointmentDate; }
-    public AppointmentStatus getStatus() { return status; }
-    public void setStatus(AppointmentStatus status) { this.status = status; }
-    public String getChiefComplaint() { return chiefComplaint; }
-    public void setChiefComplaint(String chiefComplaint) { this.chiefComplaint = chiefComplaint; }
-    public Integer getEstimatedWaitMinutes() { return estimatedWaitMinutes; }
-    public void setEstimatedWaitMinutes(Integer estimatedWaitMinutes) { this.estimatedWaitMinutes = estimatedWaitMinutes; }
-    public String getBasicSymptomsCsv() { return basicSymptomsCsv; }
-    public void setBasicSymptomsCsv(String basicSymptomsCsv) { this.basicSymptomsCsv = basicSymptomsCsv; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-    public LocalDateTime getCalledAt() { return calledAt; }
-    public void setCalledAt(LocalDateTime calledAt) { this.calledAt = calledAt; }
-    public LocalDateTime getStartedAt() { return startedAt; }
-    public void setStartedAt(LocalDateTime startedAt) { this.startedAt = startedAt; }
-    public LocalDateTime getCompletedAt() { return completedAt; }
-    public void setCompletedAt(LocalDateTime completedAt) { this.completedAt = completedAt; }
 }

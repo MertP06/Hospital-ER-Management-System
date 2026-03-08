@@ -20,7 +20,7 @@ class QueueStatus {
   factory QueueStatus.fromJson(Map<String, dynamic> json) => QueueStatus(
         queueNumber: _asInt(json['queueNumber'] ?? json['queue_number']),
         estimatedWaitMinutes:
-            _asInt(json['estimatedWait'] ?? json['estimated_wait_minutes']),
+            _asInt(json['estimatedWaitMinutes'] ?? json['estimated_wait_minutes']),
         status: json['status']?.toString(),
         found: json['found'] as bool?,
         waitingAhead: _asInt(json['waitingAhead'] ?? json['waiting_ahead']),

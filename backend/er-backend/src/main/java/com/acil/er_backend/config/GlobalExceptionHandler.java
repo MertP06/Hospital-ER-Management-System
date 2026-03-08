@@ -1,6 +1,7 @@
 package com.acil.er_backend.config;
 
 import com.acil.er_backend.dto.ApiResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -11,6 +12,7 @@ import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -34,8 +36,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneral(Exception ex) {
-        // Log the full exception for debugging (in production, use proper logging)
-        ex.printStackTrace();
+        log.error("Beklenmeyen hata oluştu", ex);
         String message = ex.getMessage() != null ? ex.getMessage() : "Beklenmeyen bir hata oluştu.";
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("Sunucu hatası: " + message));

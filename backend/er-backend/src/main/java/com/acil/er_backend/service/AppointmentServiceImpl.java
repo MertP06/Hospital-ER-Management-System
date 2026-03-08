@@ -3,6 +3,8 @@ package com.acil.er_backend.service;
 import com.acil.er_backend.dto.*;
 import com.acil.er_backend.model.*;
 import com.acil.er_backend.repository.*;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
@@ -11,20 +13,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class AppointmentServiceImpl implements AppointmentService {
 
     private final AppointmentRepository appointmentRepo;
     private final PatientRepository patientRepo;
     private final TriageRecordRepository triageRepo;
     private final DoctorNoteRepository noteRepo;
-
-    public AppointmentServiceImpl(AppointmentRepository appointmentRepo, PatientRepository patientRepo,
-            TriageRecordRepository triageRepo, DoctorNoteRepository noteRepo) {
-        this.appointmentRepo = appointmentRepo;
-        this.patientRepo = patientRepo;
-        this.triageRepo = triageRepo;
-        this.noteRepo = noteRepo;
-    }
 
     @Override
     @Transactional
@@ -33,7 +29,10 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .orElseThrow(() -> new NoSuchElementException("Hasta bulunamadı: " + patientTc));
 
         int nextQueue = appointmentRepo.findTodayMaxQueueNumber(LocalDate.now()) + 1;
-        int waitingCount = getTodayAppointmentsByStatus(AppointmentStatus.WAITING).size();
+
+        // Weighted wait time: consider triage-based priority
+        List<Appointment> waitingList = getTodayAppointmentsByStatus(AppointmentStatus.WAITING);
+        int estimatedWait = calculateWeightedWaitTime(waitingList);
 
         Appointment ap = new Appointment();
         ap.setPatient(patient);
@@ -41,7 +40,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         ap.setAppointmentDate(LocalDate.now());
         ap.setStatus(AppointmentStatus.WAITING);
         ap.setChiefComplaint(chiefComplaint);
-        ap.setEstimatedWaitMinutes(waitingCount * 15);
+        ap.setEstimatedWaitMinutes(estimatedWait);
         ap.setBasicSymptomsCsv(basicSymptomsCsv);
         ap.setCreatedAt(LocalDateTime.now());
 
@@ -49,11 +48,13 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Appointment> getTodayAppointments() {
         return appointmentRepo.findByAppointmentDateOrderByQueueNumberAsc(LocalDate.now());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Appointment> getTodayAppointmentsByStatus(AppointmentStatus status) {
         return appointmentRepo.findByAppointmentDateAndStatusOrderByQueueNumberAsc(LocalDate.now(), status);
     }
@@ -77,6 +78,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public AppointmentDetailResponse getDetail(Long id) {
         Appointment ap = appointmentRepo.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Randevu bulunamadı: " + id));
@@ -91,11 +93,13 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Appointment> getAppointmentsByPatientTc(String tc) {
         return appointmentRepo.findAllByPatientTcOrderByCreatedAtDesc(tc);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PatientHistoryResponse getPatientHistory(String tc) {
         Patient patient = patientRepo.findByTc(tc)
                 .orElseThrow(() -> new NoSuchElementException("Hasta bulunamadı: " + tc));
@@ -105,12 +109,13 @@ public class AppointmentServiceImpl implements AppointmentService {
         resp.setAppointments(appointmentRepo.findAllByPatientTcOrderByCreatedAtDesc(tc));
         resp.setTriageRecords(triageRepo.findAllByPatientTcOrderByCreatedAtDesc(tc));
         resp.setDoctorNotes(noteRepo.findAllByPatientTcOrderByCreatedAtDesc(tc));
-        resp.setUpdatedAt(java.time.LocalDateTime.now());
+        resp.setUpdatedAt(LocalDateTime.now());
 
         return resp;
     }
 
     @Override
+    @Transactional(readOnly = true)
     public DashboardStats getDashboardStats() {
         List<Appointment> today = getTodayAppointments();
 
@@ -122,11 +127,13 @@ public class AppointmentServiceImpl implements AppointmentService {
         stats.setDone((int) today.stream().filter(a -> a.getStatus() == AppointmentStatus.DONE).count());
         stats.setNoShow((int) today.stream().filter(a -> a.getStatus() == AppointmentStatus.NO_SHOW).count());
 
+        // Fix N+1: fetch all triage records for today's appointments in a single query
+        List<Long> appointmentIds = today.stream().map(Appointment::getId).toList();
+        List<TriageRecord> triages = appointmentIds.isEmpty()
+                ? List.of()
+                : triageRepo.findByAppointmentIdIn(appointmentIds);
+
         Map<String, Integer> levels = new HashMap<>();
-        List<TriageRecord> triages = new ArrayList<>();
-        for (Appointment ap : today) {
-            triages.addAll(triageRepo.findByAppointment_IdOrderByCreatedAtDesc(ap.getId()));
-        }
         for (TriageRecord tr : triages) {
             String level = tr.getTriageLevel() != null ? tr.getTriageLevel() : "BELIRSIZ";
             levels.put(level, levels.getOrDefault(level, 0) + 1);
@@ -148,15 +155,13 @@ public class AppointmentServiceImpl implements AppointmentService {
                 Math.toIntExact(
                         appointmentRepo.countByStatusAndCompletedAtAfter(
                                 AppointmentStatus.DONE,
-                                java.time.LocalDateTime.now().minusHours(1)
-                        )
-                )
-        );
+                                LocalDateTime.now().minusHours(1))));
 
         return stats;
     }
 
     @Override
+    @Transactional(readOnly = true)
     public WaitingRoomDisplay getWaitingRoomDisplay() {
         WaitingRoomDisplay display = new WaitingRoomDisplay();
         List<Appointment> called = getTodayAppointmentsByStatus(AppointmentStatus.CALLED);
@@ -190,6 +195,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public MobileQueueStatus getMobileQueueStatus(String tc) {
         MobileQueueStatus status = new MobileQueueStatus();
 
@@ -214,11 +220,46 @@ public class AppointmentServiceImpl implements AppointmentService {
             status.setWaitingAhead(0);
             status.setMessage("Muayeneniz devam ediyor.");
         } else {
-            long ahead = appointmentRepo.countWaitingAhead(LocalDate.now(), AppointmentStatus.WAITING, ap.getQueueNumber());
+            long ahead = appointmentRepo.countWaitingAhead(LocalDate.now(), AppointmentStatus.WAITING,
+                    ap.getQueueNumber());
             status.setWaitingAhead((int) ahead);
             status.setMessage("Sıranızı bekliyorsunuz. Önünüzde " + ahead + " kişi var.");
         }
 
         return status;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Appointment> findTodayActiveByTc(String tc) {
+        return appointmentRepo.findTodayActiveByTc(tc, LocalDate.now());
+    }
+
+    /**
+     * Weighted wait time calculation considering triage levels.
+     * Red (KIRMIZI) patients are prioritized, so green patients wait longer.
+     */
+    private int calculateWeightedWaitTime(List<Appointment> waitingList) {
+        if (waitingList.isEmpty())
+            return 0;
+
+        int totalMinutes = 0;
+        for (Appointment ap : waitingList) {
+            // Check if there's any triage record for this appointment
+            List<TriageRecord> triages = triageRepo.findByAppointment_IdOrderByCreatedAtDesc(ap.getId());
+            if (!triages.isEmpty()) {
+                String level = triages.get(0).getTriageLevel();
+                if ("KIRMIZI".equalsIgnoreCase(level)) {
+                    totalMinutes += 5; // Red patients are seen quickly
+                } else if ("SARI".equalsIgnoreCase(level)) {
+                    totalMinutes += 10; // Yellow patients moderate wait
+                } else {
+                    totalMinutes += 15; // Green patients standard wait
+                }
+            } else {
+                totalMinutes += 15; // Default if no triage yet
+            }
+        }
+        return totalMinutes;
     }
 }

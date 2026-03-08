@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiGet, apiPost } from '../api';
+import { toast } from '../components/ToastContainer';
 
 const DoctorNotes = () => {
     const { appointmentId } = useParams();
@@ -31,14 +32,14 @@ const DoctorNotes = () => {
             try {
                 const detail = await apiGet(`/appointments/${appointmentId}/detail`);
                 setAppointment(detail);
-                
+
                 // Mevcut doktor notunu yükle (varsa)
                 if (detail?.doctorNotes && detail.doctorNotes.length > 0) {
                     const latestNote = detail.doctorNotes[0];
-                    const labOrdersArray = latestNote.labOrders 
+                    const labOrdersArray = latestNote.labOrders
                         ? latestNote.labOrders.split(',').map(s => s.trim()).filter(s => s)
                         : [];
-                    
+
                     setForm({
                         diagnosis: latestNote.diagnosis || '',
                         secondaryDiagnosis: latestNote.secondaryDiagnosis || '',
@@ -163,7 +164,7 @@ const DoctorNotes = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!form.diagnosis.trim() || !form.plan.trim()) {
-            alert('Tanı ve plan alanları zorunludur');
+            toast.warning('Tanı ve plan alanları zorunludur');
             return;
         }
         setSubmitting(true);
@@ -181,10 +182,10 @@ const DoctorNotes = () => {
                 referralDepartment: form.referralDepartment || null,
                 restDays: form.restDays ? parseInt(form.restDays) : null
             });
-            alert('Doktor notu kaydedildi!');
+            toast.success('Doktor notu başarıyla kaydedildi!');
             navigate('/appointments');
         } catch (err) {
-            alert('Hata: ' + err.message);
+            toast.error('Hata: ' + err.message);
         } finally {
             setSubmitting(false);
         }
@@ -334,7 +335,7 @@ const DoctorNotes = () => {
                                 {labSearchTerm && (
                                     <div className="lab-orders-dropdown">
                                         {labTests
-                                            .filter(test => 
+                                            .filter(test =>
                                                 test.toLowerCase().includes(labSearchTerm.toLowerCase())
                                             )
                                             .map((test, idx) => {
@@ -349,7 +350,7 @@ const DoctorNotes = () => {
                                                             <div className={`lab-order-checkbox-custom ${isSelected ? 'checked' : ''}`}>
                                                                 {isSelected && (
                                                                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                                                                        <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                        <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                                                     </svg>
                                                                 )}
                                                             </div>
@@ -358,14 +359,14 @@ const DoctorNotes = () => {
                                                     </div>
                                                 );
                                             })}
-                                        {labTests.filter(test => 
+                                        {labTests.filter(test =>
                                             test.toLowerCase().includes(labSearchTerm.toLowerCase())
                                         ).length === 0 && (
-                                            <div className="lab-orders-empty">
-                                                <span className="empty-icon">🔍</span>
-                                                <p>"{labSearchTerm}" için sonuç bulunamadı</p>
-                                            </div>
-                                        )}
+                                                <div className="lab-orders-empty">
+                                                    <span className="empty-icon">🔍</span>
+                                                    <p>"{labSearchTerm}" için sonuç bulunamadı</p>
+                                                </div>
+                                            )}
                                     </div>
                                 )}
                             </div>
@@ -476,7 +477,7 @@ const DoctorNotes = () => {
                                 {departmentSearchTerm && (
                                     <div className="department-dropdown">
                                         {medicalDepartments
-                                            .filter(dept => 
+                                            .filter(dept =>
                                                 dept.toLowerCase().includes(departmentSearchTerm.toLowerCase())
                                             )
                                             .map((dept, idx) => (
@@ -491,19 +492,19 @@ const DoctorNotes = () => {
                                                     {dept}
                                                     {form.referralDepartment === dept && (
                                                         <svg className="check-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                                            <path d="M13.3333 4L6 11.3333L2.66667 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                            <path d="M13.3333 4L6 11.3333L2.66667 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                                         </svg>
                                                     )}
                                                 </div>
                                             ))}
-                                        {medicalDepartments.filter(dept => 
+                                        {medicalDepartments.filter(dept =>
                                             dept.toLowerCase().includes(departmentSearchTerm.toLowerCase())
                                         ).length === 0 && (
-                                            <div className="department-empty">
-                                                <span className="empty-icon">🔍</span>
-                                                <p>"{departmentSearchTerm}" için sonuç bulunamadı</p>
-                                            </div>
-                                        )}
+                                                <div className="department-empty">
+                                                    <span className="empty-icon">🔍</span>
+                                                    <p>"{departmentSearchTerm}" için sonuç bulunamadı</p>
+                                                </div>
+                                            )}
                                     </div>
                                 )}
                                 {form.referralDepartment && !departmentSearchTerm && (

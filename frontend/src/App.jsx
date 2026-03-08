@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
 import NavBar from './components/NavBar';
 import ProtectedRoute from './components/ProtectedRoute';
+import ToastContainer from './components/ToastContainer';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Appointments from './pages/Appointments';
@@ -72,6 +73,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>
+      <ToastContainer />
     </>
   );
 }

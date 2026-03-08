@@ -1,17 +1,8 @@
 const BASE = (import.meta.env.VITE_API_BASE || 'http://localhost:8080/api').replace(/\/$/, '');
 
-export const encodeCredentials = (username, password) => btoa(`${username}:${password}`);
-export const decodeCredentials = (encoded) => {
-    try {
-        const decoded = atob(encoded);
-        const [username, password] = decoded.split(':');
-        return { username, password };
-    } catch { return null; }
-};
-
 const authHeader = () => {
-    const token = localStorage.getItem('auth');
-    return token ? { Authorization: `Basic ${token}` } : {};
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
 const handleResponse = async (res) => {
@@ -20,7 +11,7 @@ const handleResponse = async (res) => {
     const requestId = res.headers.get('x-request-id') || null;
 
     if (res.status === 401) {
-        localStorage.removeItem('auth');
+        localStorage.removeItem('token');
         localStorage.removeItem('role');
         window.location.href = '/login';
         throw new Error('Oturum süresi doldu');
@@ -60,10 +51,11 @@ export const apiPatch = (path, body) =>
 export const apiDelete = (path) =>
     fetch(`${BASE}${path}`, { method: 'DELETE', headers: authHeader() }).then(handleResponse);
 
-export const validateCredentials = async (username, password) => {
-    const encoded = encodeCredentials(username, password);
-    const res = await fetch(`${BASE}/auth/me`, {
-        headers: { Authorization: `Basic ${encoded}` }
+export const loginWithCredentials = async (username, password) => {
+    const res = await fetch(`${BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
     });
     if (!res.ok) throw new Error('Geçersiz kullanıcı adı veya şifre');
     return res.json();

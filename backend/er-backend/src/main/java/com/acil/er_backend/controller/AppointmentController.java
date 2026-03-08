@@ -4,6 +4,8 @@ import com.acil.er_backend.dto.*;
 import com.acil.er_backend.model.Appointment;
 import com.acil.er_backend.model.AppointmentStatus;
 import com.acil.er_backend.service.AppointmentService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -11,13 +13,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/appointments")
+@RequiredArgsConstructor
 public class AppointmentController {
 
     private final AppointmentService appointmentService;
-
-    public AppointmentController(AppointmentService appointmentService) {
-        this.appointmentService = appointmentService;
-    }
 
     @GetMapping
     public List<Appointment> getToday(@RequestParam(required = false) AppointmentStatus status) {
@@ -28,44 +27,23 @@ public class AppointmentController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<Appointment>> create(@RequestBody Map<String, Object> body) {
-        String patientTc = (String) body.get("patientTc");
-        String chiefComplaint = (String) body.get("chiefComplaint");
-        String basicSymptomsCsv = body.get("basicSymptomsCsv") != null
-                ? body.get("basicSymptomsCsv").toString()
-                : null;
-
-        if (patientTc == null || patientTc.isBlank()) {
-            return ResponseEntity.badRequest().body(ApiResponse.error("patientTc boş olamaz."));
-        }
-
-        try {
-            Appointment ap = appointmentService.createAppointment(patientTc, chiefComplaint, basicSymptomsCsv);
-            return ResponseEntity.ok(ApiResponse.success("Randevu oluşturuldu.", ap));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
-        }
+    public ResponseEntity<ApiResponse<Appointment>> create(@Valid @RequestBody CreateAppointmentRequest request) {
+        Appointment ap = appointmentService.createAppointment(
+                request.getPatientTc(), request.getChiefComplaint(), request.getBasicSymptomsCsv());
+        return ResponseEntity.ok(ApiResponse.success("Randevu oluşturuldu.", ap));
     }
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<ApiResponse<Appointment>> updateStatus(
             @PathVariable Long id, @RequestBody Map<String, String> body) {
-        try {
-            AppointmentStatus status = AppointmentStatus.valueOf(body.get("status"));
-            Appointment ap = appointmentService.updateStatus(id, status);
-            return ResponseEntity.ok(ApiResponse.success("Durum güncellendi.", ap));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
-        }
+        AppointmentStatus status = AppointmentStatus.valueOf(body.get("status"));
+        Appointment ap = appointmentService.updateStatus(id, status);
+        return ResponseEntity.ok(ApiResponse.success("Durum güncellendi.", ap));
     }
 
     @GetMapping("/{id}/detail")
     public ResponseEntity<AppointmentDetailResponse> getDetail(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(appointmentService.getDetail(id));
-        } catch (Exception e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(appointmentService.getDetail(id));
     }
 
     @GetMapping("/by-patient/{tc}")
@@ -75,11 +53,7 @@ public class AppointmentController {
 
     @GetMapping("/history/{tc}")
     public ResponseEntity<PatientHistoryResponse> getPatientHistory(@PathVariable String tc) {
-        try {
-            return ResponseEntity.ok(appointmentService.getPatientHistory(tc));
-        } catch (Exception e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(appointmentService.getPatientHistory(tc));
     }
 
     @GetMapping("/dashboard")

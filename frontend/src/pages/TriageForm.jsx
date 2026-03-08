@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiGet, apiPost } from '../api';
+import { toast } from '../components/ToastContainer';
 
 const TriageForm = () => {
     const { appointmentId } = useParams();
@@ -37,7 +38,7 @@ const TriageForm = () => {
                 setAppointment(detail);
                 setAllSymptoms(Array.isArray(syms) ? syms : Object.values(syms));
             } catch (err) {
-                console.error('Veriler yüklenemedi:', err);
+                toast.error('Veriler yüklenemedi: ' + err.message);
             } finally {
                 setLoading(false);
             }
@@ -45,7 +46,7 @@ const TriageForm = () => {
         fetchData();
     }, [appointmentId]);
 
-    // Debounced suggestion fetch - sadece veri setinden eşleşen kayıtları getir
+    // Fetch suggestions from backend (backend does all scoring/sorting)
     const fetchSuggestions = useCallback(async (symptomList) => {
         if (symptomList.length === 0) {
             setSuggestions([]);
@@ -53,27 +54,9 @@ const TriageForm = () => {
         }
         setLoadingSuggestions(true);
         try {
-            const data = await apiPost('/medical/search', { symptoms: symptomList });
-            // En fazla 5 kayıt göster, eşleşme skoruna göre sırala
-            const results = Array.isArray(data) ? data : [];
-            // Eşleşme skoruna göre sırala ve ilk 5'i al
-            const scored = results.map(record => {
-                const recordSymptoms = Array.isArray(record.symptoms) ? record.symptoms : [];
-                const matchCount = symptomList.filter(s => 
-                    recordSymptoms.some(rs => rs.toLowerCase().trim() === s.toLowerCase().trim())
-                ).length;
-                return { ...record, match_score: matchCount };
-            }).sort((a, b) => {
-                // Önce eşleşme skoruna göre, sonra aciliyet seviyesine göre sırala
-                if (b.match_score !== a.match_score) {
-                    return b.match_score - a.match_score;
-                }
-                const urgA = a.urgency_level || 0;
-                const urgB = b.urgency_level || 0;
-                return urgB - urgA;
-            }).slice(0, 5);
-            
-            setSuggestions(scored);
+            const data = await apiPost('/medical/suggest', { symptoms: symptomList });
+            // Backend returns already-scored and sorted top 5 results
+            setSuggestions(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error('Öneriler yüklenemedi:', err);
             setSuggestions([]);
@@ -115,7 +98,7 @@ const TriageForm = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (symptoms.length === 0) {
-            alert('En az bir semptom seçmelisiniz');
+            toast.warning('En az bir semptom seçmelisiniz');
             return;
         }
         setSubmitting(true);
@@ -134,10 +117,10 @@ const TriageForm = () => {
                 triageLevel: form.triageLevel,
                 notes: form.notes
             });
-            alert('Triaj kaydedildi!');
+            toast.success('Triaj başarıyla kaydedildi!');
             navigate('/appointments');
         } catch (err) {
-            alert('Hata: ' + err.message);
+            toast.error('Hata: ' + err.message);
         } finally {
             setSubmitting(false);
         }
@@ -224,9 +207,9 @@ const TriageForm = () => {
                             {searchTerm && filteredSymptoms.length > 0 && (
                                 <div className="symptom-dropdown">
                                     {filteredSymptoms.map(s => (
-                                        <div 
-                                            key={s} 
-                                            className="symptom-option" 
+                                        <div
+                                            key={s}
+                                            className="symptom-option"
                                             onClick={() => addSymptom(s)}
                                         >
                                             <span className="symptom-icon">➕</span>
@@ -246,8 +229,8 @@ const TriageForm = () => {
                         <div className="selected-symptoms-container">
                             <div className="selected-symptoms-header">
                                 <span>Seçili Semptomlar</span>
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className="btn-clear-all"
                                     onClick={() => setSymptoms([])}
                                 >
@@ -258,8 +241,8 @@ const TriageForm = () => {
                                 {symptoms.map(s => (
                                     <span key={s} className="symptom-tag">
                                         <span className="symptom-text">{s}</span>
-                                        <button 
-                                            type="button" 
+                                        <button
+                                            type="button"
                                             className="symptom-remove"
                                             onClick={() => removeSymptom(s)}
                                             aria-label="Kaldır"

@@ -27,7 +27,8 @@ class _PatientCardPageState extends State<PatientCardPage> {
   }
 
   Future<void> _load() async {
-    final p = await StorageService.getLastPatient();
+    // Prefer auth patient; fall back to last registered patient
+    final p = await StorageService.getAuthPatient() ?? await StorageService.getLastPatient();
     setState(() => _p = p);
     if (p != null) {
       _loadHistory(p.nationalId);
@@ -119,7 +120,7 @@ class _PatientCardPageState extends State<PatientCardPage> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: const Icon(
@@ -340,6 +341,8 @@ class _PatientCardPageState extends State<PatientCardPage> {
 
     final appointments = _history!['appointments'] as List<dynamic>? ?? [];
     final doctorNotes = _history!['doctorNotes'] as List<dynamic>? ?? [];
+    // Backend returns triageRecords as a top-level list, build lookup by appointmentId
+    final allTriageRecords = _history!['triageRecords'] as List<dynamic>? ?? [];
 
     if (appointments.isEmpty) {
       return const SizedBox.shrink();
@@ -364,7 +367,8 @@ class _PatientCardPageState extends State<PatientCardPage> {
           final isDone = status == 'DONE';
           final aptId = apt['id'];
           final aptNotes = doctorNotes.where((note) => note['appointment']?['id'] == aptId).toList();
-          final triageRecords = apt['triageRecords'] as List<dynamic>? ?? [];
+          // Match triage records by appointment id from top-level list
+          final triageRecords = allTriageRecords.where((tr) => tr['appointment']?['id'] == aptId).toList();
 
           return Card(
             margin: const EdgeInsets.only(bottom: 12),
@@ -737,9 +741,9 @@ class _PatientCardPageState extends State<PatientCardPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: (color ?? AppColors.textSecondary).withOpacity(0.08),
+        color: (color ?? AppColors.textSecondary).withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: (color ?? AppColors.textSecondary).withOpacity(0.25)),
+        border: Border.all(color: (color ?? AppColors.textSecondary).withValues(alpha: 0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 /// Simple API client wrapper for backend integration.
 class ApiClient {
@@ -44,7 +45,7 @@ class ApiClient {
   void _log(Object obj) {
     // Keep logging minimal to avoid noisy console; adjust as needed.
     // ignore: avoid_print
-    print(obj);
+    debugPrint(obj.toString());
   }
 }
 

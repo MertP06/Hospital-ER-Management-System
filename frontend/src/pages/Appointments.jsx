@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiGet, apiPatch } from '../api';
+import { toast } from '../components/ToastContainer';
 import { useAuth } from '../auth/AuthContext';
 
 const statusLabels = {
@@ -49,12 +50,12 @@ const Appointments = () => {
             await apiPatch(`/appointments/${id}/status`, { status });
             fetchAppointments();
         } catch (err) {
-            alert('Durum güncellenemedi: ' + err.message);
+            toast.error('Durum güncellenemedi: ' + err.message);
         }
     };
 
-    const byStatus = filter === 'ALL' 
-        ? appointments 
+    const byStatus = filter === 'ALL'
+        ? appointments
         : appointments.filter(a => a.status === filter);
 
     const byDate = byStatus.filter((a) => {
@@ -97,8 +98,8 @@ const Appointments = () => {
                         >
                             {s === 'ALL' ? 'Tümü' : statusLabels[s]}
                             <span className="count">
-                                {s === 'ALL' 
-                                    ? appointments.length 
+                                {s === 'ALL'
+                                    ? appointments.length
                                     : appointments.filter(a => a.status === s).length}
                             </span>
                         </button>
@@ -121,7 +122,7 @@ const Appointments = () => {
                                     <h3>{ap.patient?.name || 'İsimsiz'}</h3>
                                     <span className="tc">TC: {ap.patient?.tc}</span>
                                 </div>
-                                <span 
+                                <span
                                     className="status-badge"
                                     style={{ backgroundColor: statusColors[ap.status] }}
                                 >
@@ -139,7 +140,7 @@ const Appointments = () => {
                                 {user?.role === 'NURSE' && (
                                     <>
                                         {ap.status === 'WAITING' && (
-                                            <button 
+                                            <button
                                                 className="btn btn-call"
                                                 onClick={() => updateStatus(ap.id, 'CALLED')}
                                             >
@@ -147,7 +148,7 @@ const Appointments = () => {
                                             </button>
                                         )}
                                         {(ap.status === 'WAITING' || ap.status === 'CALLED') && (
-                                            <button 
+                                            <button
                                                 className="btn btn-noshow"
                                                 onClick={() => updateStatus(ap.id, 'NO_SHOW')}
                                             >
@@ -155,7 +156,7 @@ const Appointments = () => {
                                             </button>
                                         )}
                                         {ap.status === 'CALLED' && (
-                                            <button 
+                                            <button
                                                 className="btn btn-triage"
                                                 onClick={() => navigate(`/triage/${ap.id}`)}
                                             >
@@ -168,7 +169,7 @@ const Appointments = () => {
                                 {user?.role === 'DOCTOR' && (
                                     <>
                                         {ap.status === 'CALLED' && (
-                                            <button 
+                                            <button
                                                 className="btn btn-start"
                                                 onClick={() => updateStatus(ap.id, 'IN_PROGRESS')}
                                             >
@@ -176,7 +177,7 @@ const Appointments = () => {
                                             </button>
                                         )}
                                         {ap.status === 'IN_PROGRESS' && (
-                                            <button 
+                                            <button
                                                 className="btn btn-note"
                                                 onClick={() => navigate(`/doctor-note/${ap.id}`)}
                                             >

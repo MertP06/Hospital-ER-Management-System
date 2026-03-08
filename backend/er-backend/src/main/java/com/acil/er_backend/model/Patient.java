@@ -2,10 +2,15 @@ package com.acil.er_backend.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
+import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "patients")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Patient {
 
     @Id
@@ -28,15 +33,4 @@ public class Patient {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
-
-    public String getTc() { return tc; }
-    public void setTc(String tc) { this.tc = tc; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public Integer getBirthYear() { return birthYear; }
-    public void setBirthYear(Integer birthYear) { this.birthYear = birthYear; }
-    public String getGender() { return gender; }
-    public void setGender(String gender) { this.gender = gender; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

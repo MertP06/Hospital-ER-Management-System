@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:dio/dio.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle, FilteringTextInputFormatter;
 
@@ -7,7 +7,6 @@ import '../constants/app_colors.dart';
 import '../constants/app_strings.dart';
 import '../models/patient.dart';
 import '../models/triage_request.dart';
-import '../models/triage_response.dart';
 import '../services/storage_service.dart';
 import '../services/triage_service.dart';
 import '../utils/validators.dart';
@@ -176,55 +175,8 @@ class _RegisterPageState extends State<RegisterPage> {
             : null,
       );
 
-      TriageResponse? apiResp;
-      try {
-        apiResp = await TriageService().submitTriage(req);
-      } on DioException catch (e) {
-        // 409 Conflict = Aktif randevu var
-        if (e.response?.statusCode == 409) {
-          final msg = e.response?.data?['message']?.toString() ?? 
-              'Zaten aktif bir randevunuz bulunmaktadır.';
-          setState(() {
-            _submitting = false;
-            _errorMessage = msg;
-          });
-          if (mounted) {
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('Aktif Randevu Mevcut'),
-                content: Text(msg),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Tamam'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (_) => const TriageResultPage()),
-                      );
-                    },
-                    child: const Text('Randevumu Gör'),
-                  ),
-                ],
-              ),
-            );
-          }
-          return;
-        }
-        // Diğer API hatalarında fallback'e devam ediyoruz
-        debugPrint('API triage hatası: $e');
-      } catch (e) {
-        // API hatasında fallback'e devam ediyoruz
-        debugPrint('API triage hatası: $e');
-      }
-
-      // Offline fallback kural eşleştirme
-      final fallbackRule =
-          await TriageService().matchBySymptoms(_picked.toList());
+      // submitTriage already handles offline fallback internally
+      final apiResp = await TriageService().submitTriage(req);
 
       // Sıra bilgisi için backend kuyruğu dene (opsiyonel)
       final finalQueueStatus =
@@ -243,13 +195,9 @@ class _RegisterPageState extends State<RegisterPage> {
         symptoms: req.symptoms,
         queueNumber: queueNo,
         urgencyLabel: apiResp?.urgencyLabel ??
-            fallbackRule?.urgencyLabel ??
             AppStrings.evaluationRequired,
-        urgencyLevel: apiResp?.urgencyLevel ??
-            fallbackRule?.urgencyLevel ??
-            3,
+        urgencyLevel: apiResp?.urgencyLevel ?? 3,
         responseText: apiResp?.responseText ??
-            fallbackRule?.response ??
             AppStrings.defaultResponse,
         createdAt: DateTime.now(),
         estimatedWaitMinutes: estimatedWait,
@@ -260,6 +208,7 @@ class _RegisterPageState extends State<RegisterPage> {
       await StorageService.saveLastPatient(p);
 
       if (!mounted) return;
+      setState(() => _submitting = false);
       
       Navigator.pushReplacement(
         context,

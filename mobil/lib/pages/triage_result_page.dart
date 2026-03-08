@@ -296,15 +296,15 @@ class _TriageResultPageState extends State<TriageResultPage> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.primary.withOpacity(0.1),
-            AppColors.primaryLight.withOpacity(0.1),
+            AppColors.primary.withValues(alpha: 0.1),
+            AppColors.primaryLight.withValues(alpha: 0.1),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.primary.withOpacity(0.3),
+          color: AppColors.primary.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -395,9 +395,9 @@ class _TriageResultPageState extends State<TriageResultPage> {
       padding: const EdgeInsets.all(14),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppColors.success.withOpacity(0.12),
+        color: AppColors.success.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.success.withOpacity(0.3)),
+        border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: const [
@@ -423,9 +423,9 @@ class _TriageResultPageState extends State<TriageResultPage> {
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppColors.textTertiary.withOpacity(0.12),
+        color: AppColors.textTertiary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.textTertiary.withOpacity(0.3)),
+        border: Border.all(color: AppColors.textTertiary.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -465,7 +465,7 @@ class _TriageResultPageState extends State<TriageResultPage> {
   }
 
   String _formatDateTime(DateTime dt) {
-    final two = (int n) => n.toString().padLeft(2, '0');
+    String two(int n) => n.toString().padLeft(2, '0');
     return "${two(dt.day)}/${two(dt.month)}/${dt.year} ${two(dt.hour)}:${two(dt.minute)}";
   }
 

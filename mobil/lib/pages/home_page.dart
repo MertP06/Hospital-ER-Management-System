@@ -113,7 +113,7 @@ class _HomePageState extends State<HomePage> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16),
           ),
           child: const Icon(
@@ -172,10 +172,10 @@ class _HomePageState extends State<HomePage> {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: color.withOpacity(0.3),
+              color: color.withValues(alpha: 0.3),
               width: 1.5,
             ),
           ),

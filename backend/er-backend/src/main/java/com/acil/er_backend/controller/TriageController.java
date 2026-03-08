@@ -5,28 +5,22 @@ import com.acil.er_backend.dto.CreateTriageRequest;
 import com.acil.er_backend.model.TriageRecord;
 import com.acil.er_backend.service.TriageService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/triage")
+@RequiredArgsConstructor
 public class TriageController {
 
     private final TriageService triageService;
 
-    public TriageController(TriageService triageService) {
-        this.triageService = triageService;
-    }
-
     @PostMapping
     public ResponseEntity<ApiResponse<TriageRecord>> create(@Valid @RequestBody CreateTriageRequest request) {
-        try {
-            TriageRecord record = triageService.create(request);
-            return ResponseEntity.ok(ApiResponse.success("Triaj kaydı oluşturuldu.", record));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
-        }
+        TriageRecord record = triageService.create(request);
+        return ResponseEntity.ok(ApiResponse.success("Triaj kaydı oluşturuldu.", record));
     }
 
     @GetMapping("/by-appointment/{appointmentId}")
